@@ -66,6 +66,10 @@ get_ignored_files () {
 	done
 }
 
+empty_pr_urls_file () {
+	echo "" > pr_urls.txt
+}
+
 main () {
 	empty_pr_urls_file
 	local files=("$(ls -d */)")
@@ -85,10 +89,6 @@ main () {
 		fi
 		cd ..
 	done
-}
-
-empty_pr_urls_file () {
-	echo "" > pr_urls.txt
 }
 
 ignored_files=(proton-common-pom)
