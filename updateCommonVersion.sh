@@ -78,8 +78,11 @@ main () {
 		if ! [[ " ${ignored_files[@]} " =~ " ${file%%/*} " ]]; then
 			has_pom="$(has_pom)"
 			if [ "$has_pom" == "true" ]; then
-				echo "===== $file: Update Common? y/n ====="
+				echo "===== $file: Update Common? y/n/q ====="
 				read;
+				if [ "${REPLY}" == "q" ]; then
+					return;
+				fi
 				if [ "${REPLY}" == "y" ]; then
 					update_and_pr $1
 				else
