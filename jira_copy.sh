@@ -5,9 +5,8 @@ function task {
 function jira {
   task;
  url="https://issues.corp.rapid7.com/browse/$task"
-  echo "Opening $url"
   echo $url | pbcopy
-  open $url;
+  echo "Copied $url to clipboard"
 }
 
 jira;
