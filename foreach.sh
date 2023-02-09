@@ -5,18 +5,16 @@
 # Usage:
 #   - _for_each_repo <directory> <command>...
 #############################################
-_for_each_repo() {
+function _for_each_repo() {
    start=$(date +%s)
     REPO_DIR="${1:-pwd}"
-    BATCH=$2
-    arrBATCH=($(echo $BATCH | tr ";" "\n"))
-    shift 2
-    CMD=($@)
+    shift
+    CMD="${@}"
     git config --global color.ui always
     START_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"  WARNINGS=0
     OUTPUT_FDS=()
-    for CODE_DIR in ${arrBATCH[@]}; do
-      exec {OUTPUT_FD}<> <(do_for_repo "$REPO_DIR${CODE_DIR}" "${START_DIR}" $CMD)
+    for CODE_DIR in `find ${REPO_DIR} -type d -maxdepth 1 | sort `; do
+      exec {OUTPUT_FD}<> <(do_for_repo "${CODE_DIR}" "${START_DIR}" $@)
       OUTPUT_FDS=("${OUTPUT_FDS[@]}" ${OUTPUT_FD})
     done
     RESFILE=$(mktemp)
@@ -25,7 +23,6 @@ _for_each_repo() {
       cat <&"${OUTPUT_FD}" | tee -a $RESFILE
       exec {OUTPUT_FD}<&-
     done
-    set +x
     git config --global --unset color.ui
     # Return to Start
     cd ${START_DIR}
@@ -33,10 +30,15 @@ _for_each_repo() {
     printf "start: %s, end: %s, took %s seconds" "$(date -r ${start})" "$(date -r ${end})" "$((end-start))" >&2
 }
 
-do_for_repo() {
+#############################################
+# Do For Repo
+# runs a command in a directory if it is a git repo
+# Usage:
+#   - do_for_repo <directory> <command>...
+#############################################
+function do_for_repo() {
   local CODE_DIR=$1
   local START_DIR=$2
-
   shift 2
   CMD=$@
   git -C ${CODE_DIR} rev-parse --is-inside-work-tree &> /dev/null
@@ -56,36 +58,4 @@ do_for_repo() {
   fi
 }
 
-repos_batch_0=(
-    "proton-common-pom"
-
-    "proton-common"
-
-    "proton-external-clients-ipims-app;
-    proton-external-clients-bifrost;
-    proton-external-clients-idr;
-    proton-external-clients-mcdb;
-    proton-alert-store-app;
-    proton-static-data-store-app"
-
-"proton-notification-consolidation-consumer-app"
-    "proton-alert-actions-app;
-    proton-alert-consumer-app;
-    proton-external-notifier-app;
-    proton-key-service-app"
-    "proton-alert-enrichment-consumer-app;
-    proton-alert-search-app"
-    "proton-task-management-app"
-    "proton-change-notification-consumer-bifrost-app;
-    proton-regional-api-app;
-    proton-env-tools"
-    "proton-global-coordinator-app"
-    "proton-class3-api-gateway-app;
-    proton-class1-api-gateway-app"
-)
-
-
-
-for DIR_BATCH in ${repos_batch_0[@]}; do
-    _for_each_repo $1 $DIR_BATCH $2 
-done
+_for_each_repo $1 $2
